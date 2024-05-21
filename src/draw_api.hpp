@@ -1,9 +1,11 @@
 #pragma once
 #include "imgui.h"
 #include "drawing.hpp"
+#include "mat3x2.h"
 
 typedef struct DrawAPI
 {
+	void (*setMatrix)(Mat3x2 matrix);
 	void (*drawCircle)(ImVec2 center, float radius, LineStyle style);
 	void (*drawEllipse)(ImVec2 center, ImVec2 radius, float rotation, LineStyle style);
 	void (*drawLine)(ImVec2 from, ImVec2 to, LineStyle style);
@@ -14,6 +16,7 @@ typedef struct DrawAPI
 	void (*drawImage)(Image image, ImVec2 a, ImVec2 b, ImVec2 c, ImVec2 d);
 
 	static DrawAPI Create();
+	static void SetMatrix(Mat3x2 matrix);
 	static void DrawCircle(ImVec2 center, float radius, LineStyle style);
 	static void DrawEllipse(ImVec2 center, ImVec2 radius, float rotation, LineStyle style);
 	static void DrawLine(ImVec2 from, ImVec2 to, LineStyle style);

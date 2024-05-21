@@ -10,15 +10,21 @@ ImmediateAPI* Initialize(HWND hWnd)
 }
 
 DLL_API
-DrawAPI CreateBuffer()
+void Release(ImmediateAPI* handle)
 {
-    return DrawAPI::Create();
+    handle->Release();
 }
 
 DLL_API
-void Release(ImmediateAPI* handle) 
+void Resize(ImmediateAPI* handle, int width, int height)
 {
-    handle->Release();
+    handle->Resize(width, height);
+}
+
+DLL_API
+DrawAPI CreateBuffer()
+{
+    return DrawAPI::Create();
 }
 
 DLL_API

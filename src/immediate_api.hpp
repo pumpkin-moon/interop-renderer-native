@@ -24,6 +24,7 @@ public:
 	static ImDrawList* GetDrawList();
 
 	void Release();
+	void Resize(int width, int height);
 
 	Image CreateImage(void* data, int length);
 

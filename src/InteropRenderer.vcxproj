@@ -173,6 +173,7 @@
     <ClInclude Include="drawing.hpp" />
     <ClInclude Include="draw_api.hpp" />
     <ClInclude Include="immediate_api.hpp" />
+    <ClInclude Include="mat3x2.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

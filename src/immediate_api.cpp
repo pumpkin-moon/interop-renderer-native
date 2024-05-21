@@ -41,6 +41,31 @@ void ImmediateAPI::Release() {
     free(self);
 }
 
+void ImmediateAPI::Resize(int width, int height)
+{
+    ImGui_ImplDX11_InvalidateDeviceObjects();
+
+    // 1. Clear the existing references to the backbuffer
+    ID3D11RenderTargetView* nullViews[] = { NULL };
+    context->OMSetRenderTargets(ARRAYSIZE(nullViews), nullViews, NULL);
+    backbuffer->Release();
+    context->Flush();
+
+    // 2. Resize the existing swapchain
+    auto hr = swapchain->ResizeBuffers(0, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+    if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+    {
+        // You have to destroy the device, swapchain, and all resources and
+        // recreate them to recover from this case. The device was hardware reset,
+        // physically removed, or the driver was updated and/or restarted
+        std::cout << "DXGI device error!" << std::endl;
+    }
+
+    ResizeDevice(width, height);
+
+    ImGui_ImplDX11_CreateDeviceObjects();
+}
+
 Image ImmediateAPI::CreateImage(void* data, int length)
 {
     Image image;

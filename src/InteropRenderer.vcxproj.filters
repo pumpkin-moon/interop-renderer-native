@@ -56,5 +56,8 @@
     <ClInclude Include="draw_api.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="mat3x2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
