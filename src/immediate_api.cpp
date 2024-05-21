@@ -1,6 +1,9 @@
 #include "immediate_api.hpp"
 #include "iostream"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 ImmediateAPI* ImmediateAPI::Initialize(HWND hWnd) 
 {
     auto api = (ImmediateAPI*)malloc(sizeof(ImmediateAPI));
@@ -29,6 +32,70 @@ void ImmediateAPI::Release() {
     context->Release();
 
     free(self);
+}
+
+Image ImmediateAPI::CreateImage(void* data, int length)
+{
+    Image image;
+    data = stbi_load_from_memory((stbi_uc*)data, length, &image.width, &image.height, &image.channels, 4);
+
+    // Create texture
+    D3D11_TEXTURE2D_DESC desc;
+    ZeroMemory(&desc, sizeof(desc));
+    desc.Width = image.width;
+    desc.Height = image.height;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = 0;
+
+    ID3D11Texture2D* pTexture;
+    D3D11_SUBRESOURCE_DATA subResource;
+    subResource.pSysMem = data;
+    subResource.SysMemPitch = desc.Width * 4;
+    subResource.SysMemSlicePitch = 0;
+    device->CreateTexture2D(&desc, &subResource, &pTexture);
+
+    // Create texture view
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+    ZeroMemory(&srvDesc, sizeof(srvDesc));
+    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = desc.MipLevels;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+
+    if (pTexture == NULL)
+    {
+        return image;
+    }
+
+    ID3D11ShaderResourceView* srv;
+    device->CreateShaderResourceView(pTexture, &srvDesc, &srv);
+    pTexture->Release();
+
+    image.resource = srv;
+    return image;
+}
+
+void ImmediateAPI::BeginFrame(Color color)
+{
+    float nColor[4] = { color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
+    context->ClearRenderTargetView(backbuffer, nColor);
+
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+}
+
+void ImmediateAPI::EndFrame()
+{
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+    swapchain->Present(0, 0);
 }
 
 void ImmediateAPI::InitD3D()

@@ -1,11 +1,17 @@
 #pragma once
-#include "windows.h"
-#include "d3d11.h"
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
 
+#include "d3d11.h"
+#pragma comment (lib, "d3d11.lib")
+
+#include "drawing.hpp"
+
 struct ImmediateAPI {
+public:
+	static ImDrawList* drawList;
+
 private:
 	ImmediateAPI* self;
 	HWND window;
@@ -18,6 +24,11 @@ private:
 public:
 	static ImmediateAPI* Initialize(HWND hWnd);
 	void Release();
+
+	Image CreateImage(void* data, int length);
+
+	void BeginFrame(Color color);
+	void EndFrame();
 
 private:	
 	void InitD3D();

@@ -13,3 +13,21 @@ void Release(ImmediateAPI* handle)
 {
     handle->Release();
 }
+
+DLL_API
+Image CreateImage(ImmediateAPI* handle, void* data, int length)
+{
+    return handle->CreateImage(data, length);
+}
+
+DLL_API
+void BeginFrame(ImmediateAPI* handle, Color color)
+{
+    handle->BeginFrame(color);
+}
+
+DLL_API
+void EndFrame(ImmediateAPI* handle)
+{
+    handle->EndFrame();
+}
