@@ -12,22 +12,24 @@
 
 struct ImmediateAPI
 {
+private:
 	IDXGISwapChain* swapchain;             
 	ID3D11Device* device;
 	ID3D11DeviceContext* context;
 	ID3D11RenderTargetView* backbuffer;
 
-	static ImmediateAPI* init(HWND hWnd);
-	void begin_frame(unsigned int color);
-	void end_frame();
-	void release();
-	void resize(int width, int height);
+public:
+	static ImmediateAPI* Initialize(HWND hWnd);
+	void BeginFrame(unsigned int color);
+	void EndFrame();
+	void Release();
+	void Resize(int width, int height);
 
-	ID3D11ShaderResourceView* create_image(void* data, int length, int width, int height);
+	ID3D11ShaderResourceView* CreateImage(void* data, int length, int width, int height);
 
-	void set_matrix(Mat3x2 matrix);
+	void DrawList(byte* data, int length);
 
-	void draw_circle(Circle circle);
-	void draw_line(Line line);
-	void draw_image(Image image);
+private:
+	void InitD3D(HWND hWnd);
+	void ResizeInternal(int width, int height);
 };

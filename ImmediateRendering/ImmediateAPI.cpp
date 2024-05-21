@@ -2,25 +2,25 @@
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
-#include "custom_vertex.h"
+#include "CustomVertex.h"
 #include <iostream>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "CommandType.h"
 
 #define CUSTOMFVF (D3DFVF_XYZRHW | D3DFVF_DIFFUSE)
 
 static ImmediateAPI API;
 static bool Initialized = false;
 static HWND HWnd;
-static ImDrawList* DrawList;
-static Mat3x2 Matrix = { 1, 0, 0, 1, 0, 0 };
+static ImDrawList* ImGuiDrawList;
 
-void resize_internal(int width, int height)
+void ImmediateAPI::ResizeInternal(int width, int height)
 {
     // get the address of the back buffer
     ID3D11Texture2D* pBackBuffer;
-    API.swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+    swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 
     if (pBackBuffer == NULL)
     {
@@ -29,11 +29,11 @@ void resize_internal(int width, int height)
     }
 
     // use the back buffer address to create the render target
-    API.device->CreateRenderTargetView(pBackBuffer, NULL, &API.backbuffer);
+    device->CreateRenderTargetView(pBackBuffer, NULL, &backbuffer);
     pBackBuffer->Release();
 
     // set the render target as the back buffer
-    API.context->OMSetRenderTargets(1, &API.backbuffer, NULL);
+    context->OMSetRenderTargets(1, &backbuffer, NULL);
 
     // Set the viewport
     D3D11_VIEWPORT viewport;
@@ -44,10 +44,10 @@ void resize_internal(int width, int height)
     viewport.Width = float(width);
     viewport.Height = float(height);
 
-    API.context->RSSetViewports(1, &viewport);
+    context->RSSetViewports(1, &viewport);
 }
 
-static void initD3D(HWND hWnd)
+void ImmediateAPI::InitD3D(HWND hWnd)
 {
     DXGI_SWAP_CHAIN_DESC scd;
 
@@ -71,21 +71,21 @@ static void initD3D(HWND hWnd)
         NULL,
         D3D11_SDK_VERSION,
         &scd,
-        &API.swapchain,
-        &API.device,
+        &swapchain,
+        &device,
         NULL,
-        &API.context);
+        &context);
 
     RECT rect;
     GetWindowRect(hWnd, &rect);
-    resize_internal(rect.right - rect.left, rect.bottom - rect.top);
+    ResizeInternal(rect.right - rect.left, rect.bottom - rect.top);
 }
 
-ImmediateAPI* ImmediateAPI::init(HWND hWnd)
+ImmediateAPI* ImmediateAPI::Initialize(HWND hWnd)
 {
 	if (!Initialized)
 	{
-        initD3D(hWnd);
+        API.InitD3D(hWnd);
 
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
@@ -103,7 +103,7 @@ ImmediateAPI* ImmediateAPI::init(HWND hWnd)
 	return &API;
 }
 
-void ImmediateAPI::begin_frame(unsigned int color)
+void ImmediateAPI::BeginFrame(unsigned int color)
 {
     float nColor[4] = { 
         (color >> 0 & 0xFF) / 255.0f,
@@ -112,45 +112,38 @@ void ImmediateAPI::begin_frame(unsigned int color)
         (color >> 24 & 0xFF) / 255.0f
     };
 
-    API.context->ClearRenderTargetView(API.backbuffer, nColor);
+    context->ClearRenderTargetView(API.backbuffer, nColor);
 
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    DrawList = ImGui::GetForegroundDrawList();
+    ImGuiDrawList = ImGui::GetForegroundDrawList();
 }
 
-void ImmediateAPI::end_frame()
+void ImmediateAPI::EndFrame()
 {
-    auto count = DrawList->VtxBuffer.Size;
-
-    for (int i = 0; i < count; ++i)
-    {
-        DrawList->VtxBuffer[i].pos = Matrix.transform(DrawList->VtxBuffer[i].pos);
-    }
-
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-    API.swapchain->Present(0, 0);
+    swapchain->Present(0, 0);
 }
 
-void ImmediateAPI::release()
+void ImmediateAPI::Release()
 {
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
 
-    API.swapchain->Release();
-    API.backbuffer->Release();
-    API.device->Release();
-    API.context->Release();
+    swapchain->Release();
+    backbuffer->Release();
+    device->Release();
+    context->Release();
     
     Initialized = false;
 }
 
-void ImmediateAPI::resize(int width, int height)
+void ImmediateAPI::Resize(int width, int height)
 {
     ImGui_ImplDX11_InvalidateDeviceObjects();
 
@@ -170,12 +163,12 @@ void ImmediateAPI::resize(int width, int height)
         std::cout << "DXGI device error!" << std::endl;
     }
 
-    resize_internal(width, height);
+    ResizeInternal(width, height);
 
     ImGui_ImplDX11_CreateDeviceObjects();
 }
 
-ID3D11ShaderResourceView* ImmediateAPI::create_image(void* data, int length, int width, int height)
+ID3D11ShaderResourceView* ImmediateAPI::CreateImage(void* data, int length, int width, int height)
 {
     // Create texture
     D3D11_TEXTURE2D_DESC desc;
@@ -198,7 +191,7 @@ ID3D11ShaderResourceView* ImmediateAPI::create_image(void* data, int length, int
     subResource.pSysMem = data;
     subResource.SysMemPitch = desc.Width * 4;
     subResource.SysMemSlicePitch = 0;
-    API.device->CreateTexture2D(&desc, &subResource, &pTexture);
+    device->CreateTexture2D(&desc, &subResource, &pTexture);
 
     // Create texture view
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -215,28 +208,77 @@ ID3D11ShaderResourceView* ImmediateAPI::create_image(void* data, int length, int
     }
 
     ID3D11ShaderResourceView* srv;
-    API.device->CreateShaderResourceView(pTexture, &srvDesc, &srv);
+    device->CreateShaderResourceView(pTexture, &srvDesc, &srv);
     pTexture->Release();
 
     return srv;
 }
 
-void ImmediateAPI::set_matrix(Mat3x2 matrix)
+void ImmediateAPI::DrawList(byte* data, int length)
 {
-    Matrix = matrix;
-}
+    Mat3x2 matrix = { 1, 0, 0, 1, 0, 0 };
 
-void ImmediateAPI::draw_circle(Circle circle)
-{
-    DrawList->AddCircle(circle.pos, circle.radius, circle.color, 0, circle.thickness);
-}
-
-void ImmediateAPI::draw_line(Line line)
-{
-    DrawList->AddLine(line.from, line.to, line.color, line.thickness);
-}
-
-void ImmediateAPI::draw_image(Image image)
-{
-    DrawList->AddImage(image.resource, image.position, ImVec2(image.position.x + image.size.x, image.position.y + image.size.y));
+    int offset = 0;
+    while (offset < length)
+    {
+        switch (data[offset++])
+        {
+        case CommandType::SetMatrix:
+        {
+            matrix = *(Mat3x2*)(data + offset);
+            offset += sizeof(Mat3x2);
+            break;
+        }
+        case CommandType::DrawCircle:
+        {
+            auto circle = sCircle::Unpack(data, offset, matrix);
+            ImGuiDrawList->AddCircle(circle.position, circle.radius, circle.style.color, 0, circle.style.thickness);
+            break;
+        }
+        case CommandType::DrawEllipse:
+        {
+            auto ellipse = sEllipse::Unpack(data, offset, matrix);
+            ImGuiDrawList->AddEllipse(ellipse.position, ellipse.radius, ellipse.style.color, 0, 0, ellipse.style.thickness);
+            break;
+        }
+        case CommandType::DrawLine:
+        {
+            auto line = sLine::Unpack(data, offset, matrix);
+            ImGuiDrawList->AddLine(line.from, line.to, line.style.color, line.style.thickness);
+            break;
+        }
+        case CommandType::DrawPolyline:
+        {
+            auto polyline = sPolyline::Unpack(data, offset, matrix);
+            ImGuiDrawList->AddPolyline(polyline.points, polyline.numPoints, polyline.style.color, ImDrawFlags_None, polyline.style.thickness);
+            break;
+        }
+        case CommandType::DrawTriangle:
+        {
+            auto triangle = sTriangle::Unpack(data, offset, matrix);
+            ImGuiDrawList->AddTriangle(triangle.a, triangle.b, triangle.c, triangle.style.color, triangle.style.thickness);
+            break;
+        }
+        case CommandType::DrawQuad:
+        {
+            auto quad = sQuad::Unpack(data, offset, matrix);
+            ImGuiDrawList->AddQuad(quad.a, quad.b, quad.c, quad.d, quad.style.color, quad.style.thickness);
+            break;
+        }
+        case CommandType::DrawPolygon:
+        {
+            auto polygon = sPolygon::Unpack(data, offset, matrix);
+            ImGuiDrawList->AddPolyline(polygon.points, polygon.numPoints, polygon.style.color, ImDrawFlags_Closed, polygon.style.thickness);
+            break;
+        }
+        case CommandType::DrawImage:
+        {
+            auto image = sImage::Unpack(data, offset, matrix);
+            ImGuiDrawList->AddImageQuad(image.srv, image.a, image.b, image.c, image.d);
+            break;
+        }
+        default:
+            throw;
+        }
+    }
 }

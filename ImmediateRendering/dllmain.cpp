@@ -6,61 +6,43 @@
 EXTERN
 ImmediateAPI* Init(HWND hWnd)
 {
-    return ImmediateAPI::init(hWnd);
+    return ImmediateAPI::Initialize(hWnd);
 }
 
 EXTERN
 void BeginFrame(ImmediateAPI* handle, unsigned int color)
 {
-    handle->begin_frame(color);
+    handle->BeginFrame(color);
 }
 
 EXTERN
 void EndFrame(ImmediateAPI* handle)
 {
-    handle->end_frame();
+    handle->EndFrame();
 }
 
 EXTERN
 void Release(ImmediateAPI* handle) 
 {
-    handle->release();
+    handle->Release();
 }
 
 EXTERN
 void Resize(ImmediateAPI* handle, int width, int height)
 {
-    handle->resize(width, height);
-}
-
-EXTERN 
-void SetMatrix(ImmediateAPI* handle, Mat3x2 matrix)
-{
-    handle->set_matrix(matrix);
+    handle->Resize(width, height);
 }
 
 EXTERN
 void* CreateImage(ImmediateAPI* handle, void* data, int length, int width, int height)
 {
-    return handle->create_image(data, length, width, height);
+    return handle->CreateImage(data, length, width, height);
 }
 
 EXTERN
-void DrawCircle(ImmediateAPI* handle, Circle circle)
+void DrawList(ImmediateAPI* handle, byte* list, int length)
 {
-    handle->draw_circle(circle);
-}
-
-EXTERN
-void DrawLine(ImmediateAPI* handle, Line line)
-{
-    handle->draw_line(line);
-}
-
-EXTERN 
-void DrawImage(ImmediateAPI* handle, Image image)
-{
-    handle->draw_image(image);
+    handle->DrawList(list, length);
 }
 
 BOOL APIENTRY DllMain( HMODULE hModule,
