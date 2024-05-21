@@ -81,12 +81,12 @@
     <IntDir>$(SolutionDir)..\intermediate\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)..\ext\imgui;$(ProjectDir)..\ext\imgui\backends;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\ext\imgui;$(ProjectDir)..\ext\imgui\backends;$(ProjectDir)..\ext\stb;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\build\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)..\intermediate\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)..\ext\imgui;$(ProjectDir)..\ext\imgui\backends;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\ext\imgui;$(ProjectDir)..\ext\imgui\backends;$(ProjectDir)..\ext\stb;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\build\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)..\intermediate\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
@@ -166,12 +166,13 @@
     <ClCompile Include="..\ext\imgui\backends\imgui_impl_dx11.cpp" />
     <ClCompile Include="..\ext\imgui\backends\imgui_impl_win32.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="draw_api.cpp" />
     <ClCompile Include="immediate_api.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="drawing.hpp" />
+    <ClInclude Include="draw_api.hpp" />
     <ClInclude Include="immediate_api.hpp" />
-    <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

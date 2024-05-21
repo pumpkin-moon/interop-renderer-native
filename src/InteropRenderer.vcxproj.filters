@@ -13,11 +13,8 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\ImGui">
+    <Filter Include="Source Files\imgui">
       <UniqueIdentifier>{e010bdad-e70b-4908-94ed-1ce34b32038d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\STB">
-      <UniqueIdentifier>{00f39b7a-7ff7-4b9c-95c0-dc1439ede6c0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -28,22 +25,25 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\ext\imgui\imgui.cpp">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\ext\imgui\imgui_draw.cpp">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\ext\imgui\backends\imgui_impl_dx11.cpp">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\ext\imgui\backends\imgui_impl_win32.cpp">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\ext\imgui\imgui_tables.cpp">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\ext\imgui\imgui_widgets.cpp">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="draw_api.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -53,8 +53,8 @@
     <ClInclude Include="drawing.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="stb_image.h">
-      <Filter>Header Files\STB</Filter>
+    <ClInclude Include="draw_api.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

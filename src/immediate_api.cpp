@@ -4,6 +4,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+static ImDrawList* drawList;
+
 ImmediateAPI* ImmediateAPI::Initialize(HWND hWnd) 
 {
     auto api = (ImmediateAPI*)malloc(sizeof(ImmediateAPI));
@@ -19,6 +21,11 @@ ImmediateAPI* ImmediateAPI::Initialize(HWND hWnd)
     api->InitImGui();
 
     return api;
+}
+
+ImDrawList* ImmediateAPI::GetDrawList()
+{
+    return drawList;
 }
 
 void ImmediateAPI::Release() {
@@ -88,6 +95,8 @@ void ImmediateAPI::BeginFrame(Color color)
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
+
+    drawList = ImGui::GetForegroundDrawList();
 }
 
 void ImmediateAPI::EndFrame()

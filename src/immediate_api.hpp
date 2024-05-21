@@ -7,11 +7,9 @@
 #pragma comment (lib, "d3d11.lib")
 
 #include "drawing.hpp"
+#include "draw_api.hpp"
 
 struct ImmediateAPI {
-public:
-	static ImDrawList* drawList;
-
 private:
 	ImmediateAPI* self;
 	HWND window;
@@ -23,6 +21,8 @@ private:
 
 public:
 	static ImmediateAPI* Initialize(HWND hWnd);
+	static ImDrawList* GetDrawList();
+
 	void Release();
 
 	Image CreateImage(void* data, int length);
