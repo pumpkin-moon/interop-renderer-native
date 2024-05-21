@@ -1,21 +1,33 @@
 #pragma once
-// include the basic windows header files and the Direct3D header file
+
 #include <windows.h>
 #include <windowsx.h>
-#include <d3d9.h>
-#include "circle.h"
 
-// include the Direct3D Library file
-#pragma comment (lib, "d3d9.lib")
+#include <d3d11.h>
+
+#pragma comment (lib, "d3d11.lib")
+
+#include "shapes.h"
+#include "Mat3x2.h"
 
 struct ImmediateAPI
 {
-	LPDIRECT3D9 d3d;    
-	LPDIRECT3DDEVICE9 device;    
+	IDXGISwapChain* swapchain;             
+	ID3D11Device* device;
+	ID3D11DeviceContext* context;
+	ID3D11RenderTargetView* backbuffer;
 
 	static ImmediateAPI* init(HWND hWnd);
-	void render();
-	void render_circles(Circle* circles, int count);
+	void begin_frame(unsigned int color);
+	void end_frame();
 	void release();
 	void resize(int width, int height);
+
+	ID3D11ShaderResourceView* create_image(void* data, int length, int width, int height);
+
+	void set_matrix(Mat3x2 matrix);
+
+	void draw_circle(Circle circle);
+	void draw_line(Line line);
+	void draw_image(Image image);
 };

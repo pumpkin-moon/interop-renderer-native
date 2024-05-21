@@ -1,90 +1,101 @@
 #include "ImmediateAPI.h"
-#include "d3d9.h"
 #include "imgui.h"
 #include "imgui_impl_win32.h"
-#include "imgui_impl_dx9.h"
+#include "imgui_impl_dx11.h"
 #include "custom_vertex.h"
 #include <iostream>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 #define CUSTOMFVF (D3DFVF_XYZRHW | D3DFVF_DIFFUSE)
 
 static ImmediateAPI API;
 static bool Initialized = false;
 static HWND HWnd;
+static ImDrawList* DrawList;
+static Mat3x2 Matrix = { 1, 0, 0, 1, 0, 0 };
 
-D3DPRESENT_PARAMETERS create_params(HWND hWnd, int width, int height)
+void resize_internal(int width, int height)
 {
-    D3DPRESENT_PARAMETERS d3dpp;
+    // get the address of the back buffer
+    ID3D11Texture2D* pBackBuffer;
+    API.swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 
-    ZeroMemory(&d3dpp, sizeof(d3dpp));
-    d3dpp.Windowed = true;
-    d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-    d3dpp.hDeviceWindow = hWnd;
-    d3dpp.BackBufferWidth = width;
-    d3dpp.BackBufferHeight = height;
+    if (pBackBuffer == NULL)
+    {
+        std::cout << "'pBackBuffer' is null!" << std::endl;
+        return;
+    }
 
-    return d3dpp;
+    // use the back buffer address to create the render target
+    API.device->CreateRenderTargetView(pBackBuffer, NULL, &API.backbuffer);
+    pBackBuffer->Release();
+
+    // set the render target as the back buffer
+    API.context->OMSetRenderTargets(1, &API.backbuffer, NULL);
+
+    // Set the viewport
+    D3D11_VIEWPORT viewport;
+    ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.Width = float(width);
+    viewport.Height = float(height);
+
+    API.context->RSSetViewports(1, &viewport);
 }
 
-LPDIRECT3DVERTEXBUFFER9 v_buffer;
-
-void init_graphics()
+static void initD3D(HWND hWnd)
 {
-    // create three vertices using the CUSTOMVERTEX struct built earlier
-    CUSTOMVERTEX vertices[] =
-    {
-        { 320.0f, 50.0f, 0.5f, 1.0f, D3DCOLOR_XRGB(0, 0, 255), },
-        { 520.0f, 400.0f, 0.5f, 1.0f, D3DCOLOR_XRGB(0, 255, 0), },
-        { 120.0f, 400.0f, 0.5f, 1.0f, D3DCOLOR_XRGB(255, 0, 0), },
-    };
+    DXGI_SWAP_CHAIN_DESC scd;
 
-    // create the vertex and store the pointer into v_buffer, which is created globally
-    API.device->CreateVertexBuffer(3 * sizeof(CUSTOMVERTEX),
-        0,
-        CUSTOMFVF,
-        D3DPOOL_MANAGED,
-        &v_buffer,
-        NULL);
+    // clear out the struct for use
+    ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 
-    VOID* pVoid;    // the void pointer
+    // fill the swap chain description struct
+    scd.BufferCount = 1;                                    // one back buffer
+    scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;     // use 32-bit color
+    scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
+    scd.OutputWindow = hWnd;                                // the window to be used
+    scd.SampleDesc.Count = 4;                               // how many multisamples
+    scd.Windowed = TRUE;                                    // windowed/full-screen mode
 
-    v_buffer->Lock(0, 0, (void**)&pVoid, 0);    // lock the vertex buffer
-    memcpy(pVoid, vertices, sizeof(vertices));    // copy the vertices to the locked buffer
-    v_buffer->Unlock();    // unlock the vertex buffer
+    // create a device, device context and swap chain using the information in the scd struct
+    D3D11CreateDeviceAndSwapChain(NULL,
+        D3D_DRIVER_TYPE_HARDWARE,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        D3D11_SDK_VERSION,
+        &scd,
+        &API.swapchain,
+        &API.device,
+        NULL,
+        &API.context);
+
+    RECT rect;
+    GetWindowRect(hWnd, &rect);
+    resize_internal(rect.right - rect.left, rect.bottom - rect.top);
 }
 
 ImmediateAPI* ImmediateAPI::init(HWND hWnd)
 {
 	if (!Initialized)
 	{
-		API.d3d = Direct3DCreate9(D3D_SDK_VERSION);
-
-        RECT rect;
-        GetWindowRect(hWnd, &rect);
-
-        auto d3dpp = create_params(hWnd, rect.right - rect.left, rect.bottom - rect.top);
-
-        API.d3d->CreateDevice(D3DADAPTER_DEFAULT,
-            D3DDEVTYPE_HAL,
-            hWnd,
-            D3DCREATE_SOFTWARE_VERTEXPROCESSING,
-            &d3dpp,
-            &API.device);
+        initD3D(hWnd);
 
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO();
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
         // Setup Platform/Renderer backends
         ImGui_ImplWin32_Init(hWnd);
-        ImGui_ImplDX9_Init(API.device);
+        ImGui_ImplDX11_Init(API.device, API.context);
 
         HWnd = hWnd;
-
-        init_graphics();
 
 		Initialized = true;
 	}
@@ -92,77 +103,140 @@ ImmediateAPI* ImmediateAPI::init(HWND hWnd)
 	return &API;
 }
 
-void ImmediateAPI::render()
+void ImmediateAPI::begin_frame(unsigned int color)
 {
-    API.device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
-    API.device->BeginScene();
+    float nColor[4] = { 
+        (color >> 0 & 0xFF) / 255.0f,
+        (color >> 8 & 0xFF) / 255.0f,
+        (color >> 16 & 0xFF) / 255.0f, 
+        (color >> 24 & 0xFF) / 255.0f
+    };
 
-    ImGui_ImplDX9_NewFrame();
+    API.context->ClearRenderTargetView(API.backbuffer, nColor);
+
+    ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::ShowDemoWindow(); // Show demo window! :)
-
-    ImGui::Render();
-    ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
-
-    API.device->SetFVF(CUSTOMFVF);
-    API.device->SetStreamSource(0, v_buffer, 0, sizeof(CUSTOMVERTEX));
-    API.device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
-
-    API.device->EndScene();
-
-    API.device->Present(NULL, NULL, NULL, NULL);
+    DrawList = ImGui::GetForegroundDrawList();
 }
 
-void ImmediateAPI::render_circles(Circle* circles, int count)
+void ImmediateAPI::end_frame()
 {
-    API.device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
-    API.device->BeginScene();
+    auto count = DrawList->VtxBuffer.Size;
 
-    ImGui_ImplDX9_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    ImGui::NewFrame();
-
-    auto drawList = ImGui::GetForegroundDrawList();
     for (int i = 0; i < count; ++i)
     {
-        auto circle = circles[i];
-        drawList->AddCircle(ImVec2(circle.x, circle.y), circle.radius, circle.color, 0, circle.thickness);
+        DrawList->VtxBuffer[i].pos = Matrix.transform(DrawList->VtxBuffer[i].pos);
     }
 
-    std::cout << "CmdBuffer: " << drawList->CmdBuffer.Size << " | " << drawList->CmdBuffer.Capacity << std::endl;
-    std::cout << "VtxBuffer: " << drawList->VtxBuffer.Size << " | " << drawList->VtxBuffer.Capacity << std::endl;
-    std::cout << "IdxBuffer: " << drawList->IdxBuffer.Size << " | " << drawList->IdxBuffer.Capacity << std::endl;
-
     ImGui::Render();
-    ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-    API.device->EndScene();
-
-    API.device->Present(NULL, NULL, NULL, NULL);
+    API.swapchain->Present(0, 0);
 }
 
 void ImmediateAPI::release()
 {
-    ImGui_ImplDX9_Shutdown();
+    ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
 
-    v_buffer->Release();
-
+    API.swapchain->Release();
+    API.backbuffer->Release();
     API.device->Release();
-    API.d3d->Release();
+    API.context->Release();
     
     Initialized = false;
 }
 
 void ImmediateAPI::resize(int width, int height)
 {
-    ImGui_ImplDX9_InvalidateDeviceObjects();
+    ImGui_ImplDX11_InvalidateDeviceObjects();
 
-    auto d3dpp = create_params(HWnd, width, height);
-    API.device->Reset(&d3dpp);
+    // 1. Clear the existing references to the backbuffer
+    ID3D11RenderTargetView* nullViews[] = { NULL };
+    API.context->OMSetRenderTargets(ARRAYSIZE(nullViews), nullViews, NULL);
+    API.backbuffer->Release();
+    API.context->Flush();
 
-    ImGui_ImplDX9_CreateDeviceObjects();
+    // 2. Resize the existing swapchain
+    auto hr = API.swapchain->ResizeBuffers(0, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+    if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+    {
+        // You have to destroy the device, swapchain, and all resources and
+        // recreate them to recover from this case. The device was hardware reset,
+        // physically removed, or the driver was updated and/or restarted
+        std::cout << "DXGI device error!" << std::endl;
+    }
+
+    resize_internal(width, height);
+
+    ImGui_ImplDX11_CreateDeviceObjects();
+}
+
+ID3D11ShaderResourceView* ImmediateAPI::create_image(void* data, int length, int width, int height)
+{
+    // Create texture
+    D3D11_TEXTURE2D_DESC desc;
+    ZeroMemory(&desc, sizeof(desc));
+    desc.Width = width;
+    desc.Height = height;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = 0;
+
+    int channels = 4;
+    data = stbi_load_from_memory((stbi_uc*)data, length, &width, &height, &channels, 4);
+
+    ID3D11Texture2D* pTexture;
+    D3D11_SUBRESOURCE_DATA subResource;
+    subResource.pSysMem = data;
+    subResource.SysMemPitch = desc.Width * 4;
+    subResource.SysMemSlicePitch = 0;
+    API.device->CreateTexture2D(&desc, &subResource, &pTexture);
+
+    // Create texture view
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+    ZeroMemory(&srvDesc, sizeof(srvDesc));
+    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = desc.MipLevels;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+
+    if (pTexture == NULL)
+    {
+        std::cout << "Texture is null!" << std::endl;
+        return NULL;
+    }
+
+    ID3D11ShaderResourceView* srv;
+    API.device->CreateShaderResourceView(pTexture, &srvDesc, &srv);
+    pTexture->Release();
+
+    return srv;
+}
+
+void ImmediateAPI::set_matrix(Mat3x2 matrix)
+{
+    Matrix = matrix;
+}
+
+void ImmediateAPI::draw_circle(Circle circle)
+{
+    DrawList->AddCircle(circle.pos, circle.radius, circle.color, 0, circle.thickness);
+}
+
+void ImmediateAPI::draw_line(Line line)
+{
+    DrawList->AddLine(line.from, line.to, line.color, line.thickness);
+}
+
+void ImmediateAPI::draw_image(Image image)
+{
+    DrawList->AddImage(image.resource, image.position, ImVec2(image.position.x + image.size.x, image.position.y + image.size.y));
 }

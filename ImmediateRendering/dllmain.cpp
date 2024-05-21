@@ -1,4 +1,5 @@
 #include "ImmediateAPI.h"
+#include "Mat3x2.h"
 
 #define EXTERN extern "C" __declspec(dllexport)
 
@@ -9,15 +10,15 @@ ImmediateAPI* Init(HWND hWnd)
 }
 
 EXTERN
-void Render(ImmediateAPI* handle)
+void BeginFrame(ImmediateAPI* handle, unsigned int color)
 {
-    handle->render();
+    handle->begin_frame(color);
 }
 
 EXTERN
-void RenderCircles(ImmediateAPI* handle, Circle* circles, int count)
+void EndFrame(ImmediateAPI* handle)
 {
-    handle->render_circles(circles, count);
+    handle->end_frame();
 }
 
 EXTERN
@@ -30,6 +31,36 @@ EXTERN
 void Resize(ImmediateAPI* handle, int width, int height)
 {
     handle->resize(width, height);
+}
+
+EXTERN 
+void SetMatrix(ImmediateAPI* handle, Mat3x2 matrix)
+{
+    handle->set_matrix(matrix);
+}
+
+EXTERN
+void* CreateImage(ImmediateAPI* handle, void* data, int length, int width, int height)
+{
+    return handle->create_image(data, length, width, height);
+}
+
+EXTERN
+void DrawCircle(ImmediateAPI* handle, Circle circle)
+{
+    handle->draw_circle(circle);
+}
+
+EXTERN
+void DrawLine(ImmediateAPI* handle, Line line)
+{
+    handle->draw_line(line);
+}
+
+EXTERN 
+void DrawImage(ImmediateAPI* handle, Image image)
+{
+    handle->draw_image(image);
 }
 
 BOOL APIENTRY DllMain( HMODULE hModule,
