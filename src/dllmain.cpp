@@ -28,9 +28,27 @@ DrawAPI CreateBuffer()
 }
 
 DLL_API
-Image CreateImage(ImmediateAPI* handle, void* data, int length)
+Image NewImage(ImmediateAPI* handle, byte* data, int length)
 {
-    return handle->CreateImage(data, length);
+    return handle->NewImage(data, length);
+}
+
+DLL_API
+Image NewImageRaw(ImmediateAPI* handle, byte* data, int width, int height, int channels)
+{
+    return handle->NewImageRaw(data, width, height, channels);
+}
+
+DLL_API
+Font NewFont(ImmediateAPI* handle, char* path, CodepointRange range)
+{
+    return handle->NewFont(path, range);
+}
+
+DLL_API
+Shader NewShader(ImmediateAPI* handle, char* name, char* vertexName, char* pixelName, byte* data, int length) 
+{
+    return handle->NewShader(name, vertexName, pixelName, data, length);
 }
 
 DLL_API

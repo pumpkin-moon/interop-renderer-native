@@ -1,5 +1,5 @@
 #include "draw_api.hpp"
-#include "immediate_api.hpp"
+#include <iostream>
 
 Mat3x2 cameraMatrix = { 1, 0, 0, 1, 0 ,0 };
 
@@ -15,6 +15,7 @@ DrawAPI DrawAPI::Create()
 	api.drawQuad = DrawQuad;
 	api.drawPolygon = DrawPolygon;
 	api.drawImage = DrawImage;
+	api.drawLabel = DrawLabel;
 	return api;
 }
 
@@ -104,4 +105,26 @@ void DrawAPI::DrawImage(Image image, ImVec2 a, ImVec2 b, ImVec2 c, ImVec2 d)
 	d = cameraMatrix.transform(d);
 
 	ImmediateAPI::GetDrawList()->AddImageQuad(image.resource, a, b, c, d);
+}
+
+void SetShader(const ImDrawList* drawList, const ImDrawCmd* command)
+{
+}
+
+void RemoveShader(const ImDrawList* drawList, const ImDrawCmd* command)
+{
+}
+
+void DrawAPI::DrawLabel(char* text, ImFont* font, ImVec2 pos, ImVec2 size, float fontSize, Color color)
+{
+	pos = cameraMatrix.transform(pos);
+	size = cameraMatrix.transformNormal(size);
+	fontSize *= cameraMatrix.values[0];
+
+	/*ImmediateAPI::GetDrawList()->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), 0xFF00FFFF);*/
+	ImmediateAPI::GetDrawList()->AddText(NULL, fontSize, pos, color.value, text);
+
+	/*ImmediateAPI::GetDrawList()->AddCallback(SetShader, NULL);
+	ImmediateAPI::GetDrawList()->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), 0xFF000000);
+	ImmediateAPI::GetDrawList()->AddCallback(RemoveShader, NULL);*/
 }

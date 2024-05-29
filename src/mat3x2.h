@@ -11,4 +11,10 @@ typedef struct Mat3x2
 		result = ImVec2(result.x + values[2] * point.y, result.y + values[3] * point.y);
 		return ImVec2(result.x + values[4], result.y + values[5]);
 	}
+
+	ImVec2 transformNormal(ImVec2 normal)
+	{
+		auto result = ImVec2(values[0] * normal.x, values[1] * normal.x);
+		return ImVec2(result.x + values[2] * normal.y, result.y + values[3] * normal.y);
+	}
 } Mat3x2;

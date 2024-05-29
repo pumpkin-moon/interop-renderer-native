@@ -6,6 +6,9 @@
 #include "d3d11.h"
 #pragma comment (lib, "d3d11.lib")
 
+#include "d3dcompiler.h"
+#pragma comment (lib, "d3dcompiler.lib")
+
 #include "drawing.hpp"
 #include "draw_api.hpp"
 
@@ -26,7 +29,11 @@ public:
 	void Release();
 	void Resize(int width, int height);
 
-	Image CreateImage(void* data, int length);
+	Image NewImage(byte* data, int length);
+	Image NewImageRaw(byte* data, int width, int height, int channels);
+	Font NewFont(char* path, CodepointRange range);
+	Shader NewShader(char* name, char* vertexName, char* pixelName, byte* data, int length);
+	void UseShader(Shader shader);
 
 	void BeginFrame(Color color);
 	void EndFrame();

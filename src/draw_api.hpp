@@ -1,4 +1,5 @@
 #pragma once
+#include "immediate_api.hpp"
 #include "imgui.h"
 #include "drawing.hpp"
 #include "mat3x2.h"
@@ -14,6 +15,7 @@ typedef struct DrawAPI
 	void (*drawQuad)(ImVec2 a, ImVec2 b, ImVec2 c, ImVec2 d, LineStyle style);
 	void (*drawPolygon)(ImVec2* points, int numPoints, LineStyle style);
 	void (*drawImage)(Image image, ImVec2 a, ImVec2 b, ImVec2 c, ImVec2 d);
+	void (*drawLabel)(char* text, ImFont* font, ImVec2 pos, ImVec2 size, float fontSize, Color color);
 
 	static DrawAPI Create();
 	static void SetMatrix(Mat3x2 matrix);
@@ -25,4 +27,5 @@ typedef struct DrawAPI
 	static void DrawQuad(ImVec2 a, ImVec2 b, ImVec2 c, ImVec2 d, LineStyle style);
 	static void DrawPolygon(ImVec2* points, int numPoints, LineStyle style);
 	static void DrawImage(Image image, ImVec2 a, ImVec2 b, ImVec2 c, ImVec2 d);
+	static void DrawLabel(char* text, ImFont* font, ImVec2 pos, ImVec2 size, float fontSize, Color color);
 } DrawAPI;
