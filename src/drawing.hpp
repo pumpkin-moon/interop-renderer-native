@@ -38,11 +38,7 @@ struct Rect
 
 struct Font
 {
-	byte* bitmapData;
-	int bitmapWidth;
-	int bitmapHeight;
-	Rect* glyphRects;
-	CodepointRange glyphRange;
+	ImFont* handle;
 };
 
 struct Glyph

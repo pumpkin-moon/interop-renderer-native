@@ -167,108 +167,11 @@ void LoadGlyph(stbtt_fontinfo* info, float scale, Glyph* glyph, int codepoint)
     }
 }
 
-Font ImmediateAPI::NewFont(char* path, CodepointRange range)
+Font ImmediateAPI::NewFont(byte* data, int length, float size)
 {
-    Font font;
-    FILE* file;
-    fopen_s(&file, path, "rb");
-
-    if (file == NULL)
-    {
-        std::cout << "Could not open path '" << path << "'!" << std::endl;
-        return font;
-    }
-
-    fseek(file, 0, SEEK_END);
-    int length = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    byte* fontBuffer = (byte*)malloc(length);
-
-    fread(fontBuffer, length, 1, file);
-    fclose(file);
-
-    stbtt_fontinfo info;
-    if (!stbtt_InitFont(&info, fontBuffer, 0))
-    {
-        std::cout << "Could not initialize font!" << std::endl;
-        free(fontBuffer);
-        return font;
-    }
-
-    int ascent, descent, lineGap;
-    stbtt_GetFontVMetrics(&info, &ascent, &descent, &lineGap);
-
-    int count = range.max - range.min;
-    float scale = stbtt_ScaleForPixelHeight(&info, 64.0f);
-    auto glyphs = (Glyph*)malloc(sizeof(Glyph) * count);
-    auto rects = (stbrp_rect*)malloc(sizeof(stbrp_rect) * count);
-
-    for (int i = 0; i < count; ++i) 
-    {
-        auto glyph = glyphs + i;
-        LoadGlyph(&info, scale, glyph, range.min + i);
-
-        rects[i].id = i;
-        rects[i].w = glyph->width;
-        rects[i].h = glyph->height;
-    }
-
-    const int dimension = 2048;
-
-    stbrp_context context;
-
-    stbrp_init_target(&context, dimension, dimension, NULL, NULL);
-    stbrp_pack_rects(&context, rects, count);
-
-    int textureWidth = 0;
-    int textureHeight = 0;
-
-    for (int i = 0; i < count; ++i) 
-    {
-        textureWidth = max(textureWidth, rects[i].x + rects[i].w);
-        textureHeight = max(textureHeight, rects[i].y + rects[i].h);
-    }
-
-    textureWidth = 1 << (int)ceil(log2(textureWidth));
-    textureHeight = 1 << (int)ceil(log2(textureHeight));
-
-    font.bitmapData = (byte*)malloc(textureWidth * textureHeight);
-    font.bitmapWidth = textureWidth;
-    font.bitmapHeight = textureHeight;
-    font.glyphRects = (Rect*)malloc(sizeof(Rect) * count);
-    font.glyphRange = range;
-
-    for (int i = 0; i < count; ++i)
-    {
-        auto id = rects[i].id;
-
-        auto glyph = glyphs + id;
-        auto rect = font.glyphRects + id;
-
-        rect->x = rects[i].x;
-        rect->y = rects[i].y;
-        rect->w = rects[i].w;
-        rect->h = rects[i].h;
-
-        auto glyphArea = rect->w * rect->h;
-        for (int j = 0; j < glyphArea; ++j)
-        {
-            auto x = j % rect->w + rect->x;
-            auto y = j / rect->w + rect->y;
-
-            auto k = x + y * textureWidth;
-            font.bitmapData[k] = glyph->bitmap[j];
-        }
-
-        stbtt_FreeSDF(glyph->bitmap, NULL);
-    }
-
-    free(rects);
-    free(glyphs);
-    free(fontBuffer);
-
-    return font;
+    auto io = ImGui::GetIO();
+    auto font = io.Fonts->AddFontFromMemoryTTF(data, length, size);
+    return { font };
 }
 
 Shader ImmediateAPI::NewShader(char* name, char* vertexName, char* pixelName, byte* data, int length)
@@ -287,12 +190,6 @@ Shader ImmediateAPI::NewShader(char* name, char* vertexName, char* pixelName, by
     device->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), NULL, &pixelShader);
 
     return { vertexShader, pixelShader };
-}
-
-void ImmediateAPI::UseShader(Shader shader)
-{
-    context->VSSetShader(shader.vertexShader, NULL, 0);
-    context->PSSetShader(shader.pixelShader, NULL, 0);
 }
 
 void ImmediateAPI::BeginFrame(Color color)

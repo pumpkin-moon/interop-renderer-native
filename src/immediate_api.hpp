@@ -31,9 +31,8 @@ public:
 
 	Image NewImage(byte* data, int length);
 	Image NewImageRaw(byte* data, int width, int height, int channels);
-	Font NewFont(char* path, CodepointRange range);
+	Font NewFont(byte* data, int length, float size);
 	Shader NewShader(char* name, char* vertexName, char* pixelName, byte* data, int length);
-	void UseShader(Shader shader);
 
 	void BeginFrame(Color color);
 	void EndFrame();

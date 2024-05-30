@@ -40,9 +40,9 @@ Image NewImageRaw(ImmediateAPI* handle, byte* data, int width, int height, int c
 }
 
 DLL_API
-Font NewFont(ImmediateAPI* handle, char* path, CodepointRange range)
+Font NewFont(ImmediateAPI* handle, byte* data, int length, float size)
 {
-    return handle->NewFont(path, range);
+    return handle->NewFont(data, length, size);
 }
 
 DLL_API

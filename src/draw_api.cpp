@@ -107,24 +107,17 @@ void DrawAPI::DrawImage(Image image, ImVec2 a, ImVec2 b, ImVec2 c, ImVec2 d)
 	ImmediateAPI::GetDrawList()->AddImageQuad(image.resource, a, b, c, d);
 }
 
-void SetShader(const ImDrawList* drawList, const ImDrawCmd* command)
+void DrawAPI::DrawLabel(char* text, Font font, ImVec2 pos, ImVec2 size, float fontSize, Color color, ImVec2 alignment)
 {
-}
+	/*ImmediateAPI::GetDrawList()->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), 0xFF00FFFF);*/
+	auto textSize = font.handle->CalcTextSizeA(fontSize, FLT_MAX, -1.0f, text);
 
-void RemoveShader(const ImDrawList* drawList, const ImDrawCmd* command)
-{
-}
+	float offsetX = (size.x - textSize.x) * alignment.x;
+	float offsetY = (size.y - textSize.y) * alignment.y;
 
-void DrawAPI::DrawLabel(char* text, ImFont* font, ImVec2 pos, ImVec2 size, float fontSize, Color color)
-{
-	pos = cameraMatrix.transform(pos);
+	pos = cameraMatrix.transform(ImVec2(pos.x + offsetX, pos.y + offsetY));
 	size = cameraMatrix.transformNormal(size);
 	fontSize *= cameraMatrix.values[0];
 
-	/*ImmediateAPI::GetDrawList()->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), 0xFF00FFFF);*/
-	ImmediateAPI::GetDrawList()->AddText(NULL, fontSize, pos, color.value, text);
-
-	/*ImmediateAPI::GetDrawList()->AddCallback(SetShader, NULL);
-	ImmediateAPI::GetDrawList()->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), 0xFF000000);
-	ImmediateAPI::GetDrawList()->AddCallback(RemoveShader, NULL);*/
+	ImmediateAPI::GetDrawList()->AddText(font.handle, fontSize, pos, color.value, text);
 }
