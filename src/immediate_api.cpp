@@ -169,8 +169,11 @@ void LoadGlyph(stbtt_fontinfo* info, float scale, Glyph* glyph, int codepoint)
 
 Font ImmediateAPI::NewFont(byte* data, int length, float size)
 {
+    ImFontConfig cfg;
+    cfg.FontDataOwnedByAtlas = false;
+
     auto io = ImGui::GetIO();
-    auto font = io.Fonts->AddFontFromMemoryTTF(data, length, size);
+    auto font = io.Fonts->AddFontFromMemoryTTF(data, length, size, &cfg);
     return { font };
 }
 
